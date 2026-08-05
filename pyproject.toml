@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gspc-harness"
+version = "0.1.0"
+description = "CSOAI GSPC governance benchmarks as runnable Inspect evals (EU AI Act risk-tier classification and agentic provision lookup)."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "CSOAI" }]
+keywords = ["ai-governance", "eu-ai-act", "benchmark", "inspect-ai", "evaluation"]
+dependencies = ["inspect_ai>=0.3"]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+
+[project.urls]
+Homepage = "https://csoai.org"
+Repository = "https://github.com/CSOAI-ORG/gspc-harness"
