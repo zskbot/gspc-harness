@@ -3,9 +3,9 @@
 Open, runnable evaluation tasks for AI-governance capability, built on
 [Inspect](https://inspect.aisi.org.uk/) (UK AI Safety Institute).
 
-Two tasks ship here. Both are **self-contained** — the items live in the source file, there
-is no dataset to download, no API key to obtain from us, and no part of this repository
-reads a `.env`. Clone it and it runs.
+**270 items across 4 task files.** Every one is self-contained: items ship as data in this
+repository, nothing is downloaded, no API key is obtained from us, and no file here reads a
+`.env`. Clone it and it runs.
 
 ## Install and run
 
@@ -27,10 +27,10 @@ Against a hosted model:
 
 ```bash
 export OPENAI_API_KEY=sk-...
-inspect eval tasks/gspc_governance.py --model openai/gpt-4o
+inspect eval tasks/govbench_inspect.py --model openai/gpt-4o
 ```
 
-Both commands above were run end to end on a clean install before this README was written.
+All four task files were run end to end on a clean clone before this README was written.
 
 > This project is **not on PyPI**. There is no `pip install gspc-harness`. Install from
 > this repository. (We learned this the hard way: a sibling repo told readers to
@@ -38,43 +38,46 @@ Both commands above were run end to end on a clean install before this README wa
 
 ## The tasks
 
-| task | file | items | what it measures |
-|---|---|---|---|
-| `gspc_governance` | `tasks/gspc_governance.py` | 24 | EU AI Act risk-tier classification: given a deployment scenario, return PROHIBITED / HIGH_RISK / LIMITED_RISK / MINIMAL_RISK. Every item carries the provision it turns on (Art 5(1)(c), Annex III 4(a), Art 6(3)(a) …). |
-| `gspc_xraiv` | `tasks/gspc_xraiv.py` | 8 | Agentic: the model gets a `lookup_ai_act` tool and must reach a verdict having actually consulted the provision. Scores whether it **acted within the law**, not whether it recited it. |
+| file | items | what it measures |
+|---|---|---|
+| `tasks/govbench_inspect.py` | 193 | Governance knowledge across 26 dimensions — retrieval faithfulness, cross-walk between frameworks, fundamental rights, redress, model attacks. Six task entry points; `govbench` runs all of it. |
+| `tasks/defbench_inspect.py` | 45 | Refusal behaviour on a care battery: should the model refuse, and does it? Both directions scored — a model that refuses the benign half is broken too. |
+| `tasks/gspc_governance.py` | 24 | EU AI Act risk-tier classification: PROHIBITED / HIGH_RISK / LIMITED_RISK / MINIMAL_RISK, each item anchored to the provision it turns on. |
+| `tasks/gspc_xraiv.py` | 8 | Agentic — the model gets a `lookup_ai_act` tool and must reach a verdict having actually consulted the provision. Scores whether it **acted** within the law, not whether it recited it. |
 
-`gspc_governance` includes the cases that separate a model that has memorised "Annex III =
-high risk" from one that can apply the law: the Art 6(3)(a) narrow-procedural-task
-derogation, the Art 2(6) research exclusion, and an Art 6(1) safety component that is
-high-risk *without* going through Annex III.
+`gspc_governance` includes the cases that separate applying the law from memorising
+"Annex III = high risk": the Art 6(3)(a) narrow-procedural-task derogation, the Art 2(6)
+research exclusion, and an Art 6(1) safety component that is high-risk *without* going
+through Annex III.
 
 ## What this repository does not claim
 
-- **No score is quoted here, for any model, including our own.** Both tasks are below the
-  n ≥ 30 usable-items floor we require before attaching a confidence interval to a number.
-  These are runnable instruments; they are not yet a leaderboard.
-- Scoring is deterministic — an exact-label match on a constrained output, not a model
-  judging another model.
-- CSOAI **measures**. It does not certify, and it issues no conformity marks. Nothing a
-  run of this harness produces is a certification, an attestation of compliance, or advice.
+- **No score is quoted here, for any model, including our own.** These are runnable
+  instruments, not a leaderboard.
+- **Watch the denominator.** `govbench_inspect` has 193 items in aggregate, but its 26
+  dimensions hold roughly 5–15 items each. A per-dimension number is far below the n ≥ 30
+  usable-items floor we require before attaching a confidence interval, and should not be
+  reported as one. The aggregate task is the only slice with a defensible denominator.
+- Scoring is deterministic — exact-label or containment matching on constrained output,
+  not a model judging another model.
+- CSOAI **measures**. It does not certify, and it issues no conformity marks. Nothing a run
+  of this harness produces is a certification, an attestation of compliance, or advice.
 
-## What is deliberately not in this repository, and why
+## What is deliberately not here, and why
 
-Four further Inspect modules exist in CSOAI's internal tree — `govbench_inspect`,
-`defbench_inspect`, `pqcbench_inspect`, `care_cost_inspect`. They are **not published here
-because they do not currently run from a clean clone**:
+Two further Inspect modules exist in CSOAI's internal tree and are **not published,
+because they do not run from a clean clone**:
 
-- they import scoring code from their parent repository via `sys.path` manipulation, and
-- that parent module opens a `.env` file at import time and raises `FileNotFoundError`
-  without it.
+- `care_cost_inspect` — its scorer imports `care_gate_v2`, which imports
+  `sovereign_aiact_passport`. That is a dependency chain into internal code, not a leaf.
+  Its 45 items are already represented here by `defbench_inspect`, which scores the same
+  battery.
+- `pqcbench_inspect` — it builds samples from a stored results file, asking a model to
+  reproduce our own recorded PASS/FAIL cells. That measures recall of a CSOAI artefact
+  rather than governance capability, and the file it reads is not where it looks for it.
 
-A public harness must not depend on a secret-bearing file that no external user can have.
-Decoupling them is tracked work. Publishing them in their present state would have shipped
-four tasks that fail on the first command in this README, which is worse than shipping two
-that work.
-
-There is likewise **no `lm-eval` task set** in this repository. Task YAMLs for
-lm-evaluation-harness do not exist yet; when they do, they will land here.
+There is likewise **no `lm-eval` task set** here. Task YAMLs for lm-evaluation-harness do
+not exist yet; when they are written, they will land in this repository.
 
 ## Licence
 
