@@ -127,8 +127,28 @@ because they do not run from a clean clone**:
   reproduce our own recorded PASS/FAIL cells. That measures recall of a CSOAI artefact
   rather than governance capability, and the file it reads is not where it looks for it.
 
-There is likewise **no `lm-eval` task set** here. Task YAMLs for lm-evaluation-harness do
-not exist yet; when they are written, they will land in this repository.
+## lm-evaluation-harness tasks
+
+Six tasks live in `lm_eval_tasks/`, one per measured axis, generated from a table by
+`make_lm_eval_tasks.py` because each axis on the Hub uses a different question column.
+They were **run through the real harness before being committed**, not just written:
+
+```bash
+pip install "lm-eval[api]" transformers
+OPENAI_API_KEY=dummy lm_eval --model local-completions \
+  --model_args model=qwen2.5:1.5b,base_url=http://localhost:11434/v1/completions,\
+tokenizer=Qwen/Qwen2.5-1.5B-Instruct,tokenized_requests=False,num_concurrent=1 \
+  --tasks gspc_gov,gspc_agi,gspc_prv,gspc_asi,gspc_mcp,gspc_oss \
+  --include_path ./lm_eval_tasks --limit 2
+```
+
+Two things that will otherwise waste your afternoon: ollama tags are not HF repo ids, so
+`tokenizer=` must name the real repo, and `tokenized_requests=False` is required because
+ollama rejects the token-id payload lm-eval sends by default.
+
+Label extraction is shared with the Inspect tasks and the browser tools: read the label,
+and if none can be read, record it as unmeasured rather than wrong. A response naming two
+labels has not answered, and is also unmeasured.
 
 ## Licence
 
