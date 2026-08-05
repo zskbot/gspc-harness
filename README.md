@@ -114,18 +114,24 @@ visible next to the accuracy itself.
 - **No external dataset is fetched.** Items live in this repository, so no rename or
   redirect of any hosted dataset can silently change what this harness measures.
 
-## What is deliberately not here, and why
+## All six tasks run from a clean clone
 
-Two further Inspect modules exist in CSOAI's internal tree and are **not published,
-because they do not run from a clean clone**:
+`care_cost_inspect` and `pqcbench_inspect` were previously excluded because they did not
+run: the first imported `care_gate_v2` from a parent repository, the second read a results
+file that is not in this repository, and both defined their tasks inside an
+`if _HAVE_INSPECT:` block that inspect's top-level scan cannot see. All three couplings are
+now fixed — `care_gate_v2` is vendored and loaded by path, `pqcbench.json` ships in `data/`,
+and the tasks sit at module level.
 
-- `care_cost_inspect` — its scorer imports `care_gate_v2`, which imports
-  `sovereign_aiact_passport`. That is a dependency chain into internal code, not a leaf.
-  Its 45 items are already represented here by `defbench_inspect`, which scores the same
-  battery.
-- `pqcbench_inspect` — it builds samples from a stored results file, asking a model to
-  reproduce our own recorded PASS/FAIL cells. That measures recall of a CSOAI artefact
-  rather than governance capability, and the file it reads is not where it looks for it.
+`care_cost_inspect` calls its gate with `use_llm=False`, so scoring is deterministic and
+makes no network call. That is deliberate beyond convenience: a scorer that consults an
+LLM to produce the number would put a model in the scoring path, and on this estate the
+model narrates and never scores.
+
+One caveat worth stating rather than burying: `pqcbench_inspect` builds its samples from a
+stored results file, so it asks a model to reproduce recorded PASS/FAIL cells. That is
+closer to recall of a published artefact than to governance capability, and it should not
+be read as equivalent to the other five.
 
 ## lm-evaluation-harness tasks
 

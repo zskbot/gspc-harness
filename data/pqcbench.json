@@ -1,0 +1,176 @@
+{
+  "benchmark": "SOV-PQC",
+  "criteria": {
+    "alg_agility": "Every signed record names its algorithm, so a verifier need not assume one",
+    "hybrid_ready": "The format can carry two signatures over one payload (classical + PQC)",
+    "timestamped": "An RFC 3161 trusted timestamp proves existence before any future break",
+    "ts_renewal": "RFC 4998 evidence-record renewal, so the proof outlives its own algorithm",
+    "pqc_option": "A PQC algorithm is present or selectable (ML-DSA, COSE \u221248/\u221249/\u221250)"
+  },
+  "subjects_measured": 5,
+  "subjects_unmeasured": [],
+  "results": {
+    "SIGIL J-space chain": {
+      "alg_agility": {
+        "pass": false,
+        "detail": "0/21 signed records name an algorithm"
+      },
+      "hybrid_ready": {
+        "pass": false,
+        "detail": "0/21 carry a container signature field; a scalar string cannot hold a second signature"
+      },
+      "timestamped": {
+        "pass": false,
+        "detail": "no RFC 3161 token field found"
+      },
+      "ts_renewal": {
+        "pass": false,
+        "detail": "no RFC 4998 evidence-record field found"
+      },
+      "pqc_option": {
+        "pass": false,
+        "detail": "no PQC algorithm named anywhere in the chain"
+      },
+      "records": 21,
+      "signed_records": 21
+    },
+    "SOV33 sovereign chain": {
+      "alg_agility": {
+        "pass": false,
+        "detail": "0/3 signed records name an algorithm"
+      },
+      "hybrid_ready": {
+        "pass": false,
+        "detail": "0/3 carry a container signature field; a scalar string cannot hold a second signature"
+      },
+      "timestamped": {
+        "pass": false,
+        "detail": "no RFC 3161 token field found"
+      },
+      "ts_renewal": {
+        "pass": false,
+        "detail": "no RFC 4998 evidence-record field found"
+      },
+      "pqc_option": {
+        "pass": false,
+        "detail": "no PQC algorithm named anywhere in the chain"
+      },
+      "records": 3,
+      "signed_records": 3
+    },
+    "SOV33 composition chain": {
+      "alg_agility": {
+        "pass": false,
+        "detail": "0/2 signed records name an algorithm"
+      },
+      "hybrid_ready": {
+        "pass": false,
+        "detail": "0/2 carry a container signature field; a scalar string cannot hold a second signature"
+      },
+      "timestamped": {
+        "pass": false,
+        "detail": "no RFC 3161 token field found"
+      },
+      "ts_renewal": {
+        "pass": false,
+        "detail": "no RFC 4998 evidence-record field found"
+      },
+      "pqc_option": {
+        "pass": false,
+        "detail": "no PQC algorithm named anywhere in the chain"
+      },
+      "records": 2,
+      "signed_records": 2
+    },
+    "MEOK SOV33 chain": {
+      "alg_agility": {
+        "pass": false,
+        "detail": "0/2 signed records name an algorithm"
+      },
+      "hybrid_ready": {
+        "pass": false,
+        "detail": "0/2 carry a container signature field; a scalar string cannot hold a second signature"
+      },
+      "timestamped": {
+        "pass": false,
+        "detail": "no RFC 3161 token field found"
+      },
+      "ts_renewal": {
+        "pass": false,
+        "detail": "no RFC 4998 evidence-record field found"
+      },
+      "pqc_option": {
+        "pass": false,
+        "detail": "no PQC algorithm named anywhere in the chain"
+      },
+      "records": 2,
+      "signed_records": 2
+    },
+    "C2PA manifest (ours)": {
+      "alg_agility": {
+        "pass": true,
+        "detail": "COSE header carries an alg identifier"
+      },
+      "hybrid_ready": {
+        "pass": false,
+        "detail": "C2PA \u2264v2.4 defines ONE claim signature per claim \u2014 no hybrid slot exists in the spec, independent of our usage"
+      },
+      "timestamped": {
+        "pass": false,
+        "detail": "RFC 3161 timestamping is supported by C2PA; our selftest falls back to untimestamped when no TSA is reachable"
+      },
+      "ts_renewal": {
+        "pass": false,
+        "detail": "no RFC 4998 evidence-record renewal in C2PA \u2264v2.4"
+      },
+      "pqc_option": {
+        "pass": false,
+        "detail": "C2PA \u2264v2.4 permits ES256/EdDSA/PS256 only \u2014 all classical. RFC 9964 registered ML-DSA COSE \u221248/\u221249/\u221250 in May 2026 but C2PA has not adopted them"
+      },
+      "records": 1,
+      "signed_records": 1
+    }
+  },
+  "per_criterion": {
+    "alg_agility": {
+      "pass": 1,
+      "of": 5,
+      "criterion": "Every signed record names its algorithm, so a verifier need not assume one"
+    },
+    "hybrid_ready": {
+      "pass": 0,
+      "of": 5,
+      "criterion": "The format can carry two signatures over one payload (classical + PQC)"
+    },
+    "timestamped": {
+      "pass": 0,
+      "of": 5,
+      "criterion": "An RFC 3161 trusted timestamp proves existence before any future break"
+    },
+    "ts_renewal": {
+      "pass": 0,
+      "of": 5,
+      "criterion": "RFC 4998 evidence-record renewal, so the proof outlives its own algorithm"
+    },
+    "pqc_option": {
+      "pass": 0,
+      "of": 5,
+      "criterion": "A PQC algorithm is present or selectable (ML-DSA, COSE \u221248/\u221249/\u221250)"
+    }
+  },
+  "composite_score": "REFUSED BY DESIGN \u2014 see module docstring",
+  "standards": {
+    "NIST_IR_8547": "EdDSA/ECDSA disallowed after 2035",
+    "NSA_CNSA_2.0": "PQC support expected from Jan 2027",
+    "RFC_9964": "ML-DSA COSE identifiers -48/-49/-50, May 2026",
+    "C2PA_v2.4": "ES256/EdDSA/PS256 only \u2014 classical"
+  },
+  "corpus_anchor": {
+    "corpus_root": "3729b52eb469b77c6501056889460e9fcd45fc0127bc59b002863b28db3ef01d",
+    "provisions": 417,
+    "normaliser_version": "1.0.0",
+    "anchored_at": "2026-07-29T12:44:02.765183+00:00",
+    "retro": false,
+    "note": "Anchored at write time by anchored_write.write_result()."
+  }
+}

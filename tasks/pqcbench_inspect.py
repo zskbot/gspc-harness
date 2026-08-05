@@ -15,11 +15,22 @@ HONEST STATE (2026-07-28):
 """
 from __future__ import annotations
 
+import json as _json
+from pathlib import Path as _Path
+
+
+def _load_json(name):
+    """Load vendored items. These modules previously imported the parent repo or read a
+    results file that is not in this repository, so they loaded and then died at RUN time
+    with 'No inspect tasks were found' — advertised in the README and broken on the first
+    command."""
+    return _json.loads((_Path(__file__).resolve().parent.parent / "data" / name).read_text())
+
+
 import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 try:
     from inspect_ai import Task, task
@@ -49,7 +60,7 @@ def _pqc_samples() -> list:
     The results dict has crit_name entries AND meta entries (records, signed_records).
     Skip the meta entries — only criteria have pass/fail outcomes.
     """
-    pq = json.load(open(Path(__file__).resolve().parent.parent / "benchmark-results" / "pqcbench.json"))
+    pq = _load_json("pqcbench.json")
     out = []
     criteria = list(pq.get("criteria", {}).keys())
     for subject, cells in pq.get("results", {}).items():
@@ -69,32 +80,38 @@ def _pqc_samples() -> list:
     return out
 
 
-if _HAVE_INSPECT:
-    @scorer(metrics=[accuracy(), stderr(cluster="subject")])
-    def pqcbench_scorer():
-        """Scores whether model can predict the measured PQC outcome for each (chain, criterion)."""
-        async def score(state, target: Target) -> Score:
-            answer = state.output.completion or ""
-            lo = answer.lower()
-            expected = state.metadata.get("mode")
-            actual = "pass" if "pass" in lo and ("yes" in lo or "true" in lo or "pass" in lo) else "fail"
-            ok = actual == expected
-            return Score(value=1.0 if ok else 0.0, answer=answer[:200],
-                         explanation=f"expected {expected}, model said {actual}")
-        return score
+@scorer(metrics=[accuracy(), stderr(cluster="subject")])
+def pqcbench_scorer():
+    """Scores whether model can predict the measured PQC outcome for each (chain, criterion)."""
+    async def score(state, target: Target) -> Score:
+        answer = state.output.completion or ""
+        lo = answer.lower()
+        expected = state.metadata.get("mode")
+        actual = "pass" if "pass" in lo and ("yes" in lo or "true" in lo or "pass" in lo) else "fail"
+        ok = actual == expected
+        return Score(value=1.0 if ok else 0.0, answer=answer[:200],
+                     explanation=f"expected {expected}, model said {actual}")
+    return score
 
-    @task
-    def pqcbench_continuity() -> Task:
-        """All 25 (subject × criterion) cells from PQCBench."""
-        return Task(dataset=_pqc_samples(), solver=generate(), scorer=pqcbench_scorer(),
-                    name="pqcbench-continuity", metadata={"benchmark": "pqcbench", "lens": "continuity"})
 
-    @task
-    def pqcbench_alg_agility() -> Task:
-        """Subset: does the chain name a signing algorithm? NIST IR 8547 hard requirement."""
-        samples = [s for s in _pqc_samples() if s.metadata["criterion"] == "alg_agility"]
-        return Task(dataset=samples, solver=generate(), scorer=pqcbench_scorer(),
-                    name="pqcbench-alg-agility", metadata={"benchmark": "pqcbench", "lens": "continuity", "criterion": "alg_agility"})
+# Fail loudly instead of degrading to stubs: without inspect_ai these modules imported
+# SUCCESSFULLY and produced zero tasks, so inspect said "No inspect tasks were found"
+# and nothing said why.
+if not _HAVE_INSPECT:
+    raise ImportError("inspect_ai is required. pip install inspect_ai")
+
+@task
+def pqcbench_continuity() -> Task:
+    """All 25 (subject × criterion) cells from PQCBench."""
+    return Task(dataset=_pqc_samples(), solver=generate(), scorer=pqcbench_scorer(),
+                name="pqcbench-continuity", metadata={"benchmark": "pqcbench", "lens": "continuity"})
+
+@task
+def pqcbench_alg_agility() -> Task:
+    """Subset: does the chain name a signing algorithm? NIST IR 8547 hard requirement."""
+    samples = [s for s in _pqc_samples() if s.metadata["criterion"] == "alg_agility"]
+    return Task(dataset=samples, solver=generate(), scorer=pqcbench_scorer(),
+                name="pqcbench-alg-agility", metadata={"benchmark": "pqcbench", "lens": "continuity", "criterion": "alg_agility"})
 
 
 if __name__ == "__main__":
