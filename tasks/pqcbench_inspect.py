@@ -54,28 +54,62 @@ except ImportError:
         pass
 
 
-def _pqc_samples() -> list:
-    """Build Inspect Samples from pqcbench.json.
+# Fail loudly before ANY inspect_ai symbol is used. This guard previously sat just
+# above the first @task, which is below the first @scorer — so the module still died
+# with a bare NameError on `scorer` instead of saying inspect_ai was missing.
+if not _HAVE_INSPECT:
+    raise ImportError("inspect_ai is required to build these tasks. Install it with: pip install inspect_ai")
 
-    The results dict has crit_name entries AND meta entries (records, signed_records).
-    Skip the meta entries — only criteria have pass/fail outcomes.
+def _pqc_samples() -> list:
+    """Build capability items, not recall items.
+
+    The previous version asked the model to reproduce a stored verdict: the input was
+    "<subject>: <criterion>" and the target was the PASS/FAIL cell CSOAI had already
+    published. A model that had read our results page would score well without being able
+    to reason about post-quantum continuity at all, and a model that had not would be
+    guessing. That measures recall of a published artefact, not governance capability.
+
+    Each item now states the CRITERION and the OBSERVED EVIDENCE, and asks whether the
+    evidence satisfies the criterion. The subject is deliberately withheld, so the stored
+    verdict cannot be looked up or recognised — the model has to apply the rule to the
+    facts. Same cells, same ground truth, a different question.
+    
+    MAJORITY-CLASS WARNING, and it is severe. The ground truth is 24 FAIL to 1 PASS,
+    because the five measured formats genuinely fail almost every post-quantum continuity
+    criterion. A model that answers FAIL to every item scores 0.96 without reading a word.
+    Any accuracy from this task must be reported against that 0.96 floor, not against 0.5,
+    and a score below 0.96 is worse than a constant. This axis discriminates almost
+    nothing as it stands and should not be quoted as a capability result until the item
+    set includes formats that pass.
     """
     pq = _load_json("pqcbench.json")
+    criteria = pq.get("criteria", {})
     out = []
-    criteria = list(pq.get("criteria", {}).keys())
     for subject, cells in pq.get("results", {}).items():
         for crit_name, outcome in cells.items():
-            if not isinstance(outcome, dict):  # skip meta entries
+            if not isinstance(outcome, dict):  # meta entries carry no verdict
                 continue
-            target = "PASS" if outcome.get("pass") else "FAIL"
-            detail = outcome.get("detail", "")
+            definition = criteria.get(crit_name)
+            detail = (outcome.get("detail") or "").strip()
+            # An item with no criterion definition or no evidence cannot be answered from
+            # what it states, so it is not asked. Dropping it beats scoring a guess.
+            if not definition or not detail:
+                continue
             out.append(Sample(
-                input=f"{subject}: {crit_name}",
-                target=target,
-                id=f"pqc-{hash(subject + crit_name) % 100000:05d}",
-                metadata={"subject": subject, "criterion": crit_name,
+                input=(
+                    "A signed-record format was assessed against one post-quantum "
+                    "continuity criterion.\n\n"
+                    f"CRITERION ({crit_name}): {definition}\n\n"
+                    f"OBSERVED: {detail}\n\n"
+                    "Does the observed evidence satisfy the criterion? "
+                    "Reply with exactly one word: PASS or FAIL."
+                ),
+                target="PASS" if outcome.get("pass") else "FAIL",
+                id=f"pqc-{crit_name}-{abs(hash(subject + crit_name)) % 10000:04d}",
+                metadata={"criterion": crit_name,
                           "mode": "pass" if outcome.get("pass") else "fail",
-                          "detail": detail},
+                          # subject is kept for auditing the item, never shown to the model
+                          "subject": subject},
             ))
     return out
 
@@ -94,11 +128,6 @@ def pqcbench_scorer():
     return score
 
 
-# Fail loudly instead of degrading to stubs: without inspect_ai these modules imported
-# SUCCESSFULLY and produced zero tasks, so inspect said "No inspect tasks were found"
-# and nothing said why.
-if not _HAVE_INSPECT:
-    raise ImportError("inspect_ai is required. pip install inspect_ai")
 
 @task
 def pqcbench_continuity() -> Task:

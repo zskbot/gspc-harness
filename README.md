@@ -128,10 +128,19 @@ makes no network call. That is deliberate beyond convenience: a scorer that cons
 LLM to produce the number would put a model in the scoring path, and on this estate the
 model narrates and never scores.
 
-One caveat worth stating rather than burying: `pqcbench_inspect` builds its samples from a
-stored results file, so it asks a model to reproduce recorded PASS/FAIL cells. That is
-closer to recall of a published artefact than to governance capability, and it should not
-be read as equivalent to the other five.
+`pqcbench_inspect` was rewritten rather than shipped as it was. It used to ask the model
+to reproduce a stored verdict — input `"<subject>: <criterion>"`, target the PASS/FAIL cell
+CSOAI had already published — which measures recall of our own results page, not capability.
+Each item now states the **criterion** and the **observed evidence** and asks whether the
+evidence satisfies the rule, with the subject withheld so the published verdict cannot be
+recognised. Same cells, same ground truth, a different question.
+
+**It still should not be quoted, and the reason is in the data:** ground truth is
+**24 FAIL to 1 PASS**, because the five measured formats genuinely fail almost every
+criterion. A model answering FAIL every time scores **0.96** without reading a word. Any
+accuracy must be read against that floor rather than against 0.5, and anything below 0.96
+is worse than a constant. The task is included because it runs and its items are honest;
+it discriminates almost nothing until the set includes formats that pass.
 
 ## lm-evaluation-harness tasks
 

@@ -54,6 +54,12 @@ except ImportError:
         pass
 
 
+# Fail loudly before ANY inspect_ai symbol is used. This guard previously sat just
+# above the first @task, which is below the first @scorer — so the module still died
+# with a bare NameError on `scorer` instead of saying inspect_ai was missing.
+if not _HAVE_INSPECT:
+    raise ImportError("inspect_ai is required to build these tasks. Install it with: pip install inspect_ai")
+
 def _battery_samples() -> list:
     """Build Inspect Samples from care_battery.BATTERY."""
     BATTERY = _load_json("care_battery.json")
@@ -105,11 +111,6 @@ def care_cost_scorer():
     return score
 
 
-# Fail loudly instead of degrading to stubs: without inspect_ai these modules imported
-# SUCCESSFULLY and produced zero tasks, so inspect said "No inspect tasks were found"
-# and nothing said why.
-if not _HAVE_INSPECT:
-    raise ImportError("inspect_ai is required. pip install inspect_ai")
 
 @task
 def care_cost_full() -> Task:
