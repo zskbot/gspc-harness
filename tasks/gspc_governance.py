@@ -2,7 +2,8 @@
 
 By CSOAI, an independent AI-measurement body. Deterministic grading against statute-anchored ground
 truth — no LLM judge, so the same answer always scores the same. This is the governance axis of the
-GSPC family; it is the first AI-governance benchmark family registered in Inspect Evals.
+GSPC family. It is not currently registered in the Inspect Evals Register; registration
+requires a pinned source commit, a versioned paper and two complete model-run logs.
 
 HONEST SCOPE (the methods contribution): across the 12 governance/agent benchmarks this collides
 with, none report item difficulty, item discrimination, dead-item analysis, confidence intervals, or
